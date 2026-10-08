@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>More than just racing - 零基礎看懂 F1 賽車世界</title>
+
+    <!-- Google Fonts: Inter & Orbitron -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        f1red: '#FF1801',
+                        f1dark: '#0b0c10',
+                        f1card: '#151821',
+                        f1border: '#2a2f3d',
+                        f1gold: '#ffb800',
+                        f1cyan: '#00f0ff'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0c10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2f3d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF1801;
+        }
+
+        /* Carbon fiber background texture */
+        .carbon-bg {
+            background-color: #0b0c10;
+            background-image: 
+                radial-gradient(#1c202c 15%, transparent 16%),
+                radial-gradient(#1c202c 15%, transparent 16%);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+        }
+
+        /* Perspective and Flip Card transform */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Neon Glows */
+        .glow-red {
+            box-shadow: 0 0 30px rgba(255, 24, 1, 0.3);
+        }
+        .text-glow-red {
+            text-shadow: 0 0 12px rgba(255, 24, 1, 0.7);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="carbon-bg text-gray-200 antialiased selection:bg-f1red selection:text-white min-h-screen">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        
+        <!-- Sticky Header Navigation -->
+        <header class="sticky top-0 z-50 bg-f1dark/90 backdrop-blur-md border-b border-f1border/80 transition-all">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <!-- Logo Branding -->
+                <a href="#hero" class="flex items-center gap-3 group">
+                    <div class="w-10 h-8 bg-f1red flex items-center justify-center rounded transform -skew-x-12 group-hover:bg-red-600 transition-colors shadow-lg shadow-f1red/40">
+                        <i class="fas fa-flag-checkered text-white text-base transform skew-x-12"></i>
+                    </div>
+                    <div>
+                        <span class="font-display font-black text-lg sm:text-xl tracking-wider text-white flex items-center gap-1">
+                            More than <span class="text-f1red">just racing</span>
+                        </span>
+                        <span class="block text-[10px] text-gray-400 tracking-widest font-mono">絕不只是賽車・F1 新手指南</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Nav Links -->
+                <nav class="hidden lg:flex items-center space-x-1">
+                    <a v-for="item in navItems" :key="item.id" :href="'#' + item.id"
+                       @click="activeNav = item.id"
+                       :class="[
+                           activeNav === item.id 
+                               ? 'bg-f1red text-white shadow-md shadow-f1red/30' 
+                               : 'text-gray-300 hover:text-white hover:bg-f1card',
+                           'px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2'
+                       ]">
+                        <i :class="item.icon" class="text-xs"></i>
+                        {{ item.label }}
+                    </a>
+                </nav>
+
+                <!-- Mobile Menu Toggle Button -->
+                <button @click="mobileMenuOpen = !mobileMenuOpen" 
+                        class="lg:hidden p-2 rounded-lg text-gray-300 hover:text-white hover:bg-f1card focus:outline-none">
+                    <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'" class="text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Nav Dropdown -->
+            <div v-show="mobileMenuOpen" class="lg:hidden bg-f1card border-b border-f1border px-4 pt-2 pb-4 space-y-1">
+                <a v-for="item in navItems" :key="item.id" :href="'#' + item.id"
+                   @click="activeNav = item.id; mobileMenuOpen = false"
+                   :class="[
+                       activeNav === item.id ? 'bg-f1red text-white' : 'text-gray-300 hover:bg-f1dark',
+                       'block px-3 py-2.5 rounded-md text-base font-medium flex items-center gap-3'
+                   ]">
+                    <i :class="item.icon" class="w-5 text-center"></i>
+                    {{ item.label }}
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content Container -->
+        <main class="flex-grow space-y-20 pb-20">
+
+            <!-- Hero Section -->
+            <section id="hero" class="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden border-b border-f1border/60">
+                <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[380px] bg-f1red/15 blur-[140px] rounded-full pointer-events-none"></div>
+
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                    
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-f1red/10 border border-f1red/30 text-f1red font-semibold text-xs tracking-wider uppercase mb-6 shadow-sm">
+                        <span class="w-2 h-2 rounded-full bg-f1red animate-ping"></span>
+                        F1 入坑指南 • More than just racing
+                    </div>
+
+                    <h1 class="text-4xl sm:text-6xl md:text-7xl font-display font-black text-white tracking-tight leading-tight mb-6">
+                        More than <br class="sm:hidden"/>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-f1red via-red-500 to-amber-500 text-glow-red">
+                            just racing
+                        </span>
+                    </h1>
+
+                    <p class="max-w-3xl mx-auto text-base sm:text-lg text-gray-300 font-normal leading-relaxed mb-4">
+                        絕不只是賽車：零基礎看懂 F1 速度、戰術與戲劇張力
+                    </p>
+                    <p class="max-w-2xl mx-auto text-xs sm:text-sm text-gray-400 leading-relaxed mb-10">
+                        這不只是 22 台賽車、11 支車隊在賽道繞圈 — 這是年耗資數億美元的科技戰爭、人性考驗與世仇對決。
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <a href="#quiz" @click="activeNav = 'quiz'"
+                           class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-f1red to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold text-lg shadow-xl shadow-f1red/30 hover:shadow-f1red/50 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3">
+                            <i class="fas fa-bolt text-yellow-300"></i>
+                            ⚡ 5分鐘測出本命車隊
+                        </a>
+                        <a href="#basics" @click="activeNav = 'basics'"
+                           class="w-full sm:w-auto px-8 py-4 rounded-xl bg-f1card border border-f1border hover:border-gray-500 text-gray-200 font-bold text-lg hover:text-white transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3">
+                            <i class="fas fa-book-open text-f1red"></i>
+                            🏁 瀏覽觀賽懶人包
+                        </a>
+                    </div>
+
+                    <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                        <div class="p-4 rounded-xl bg-f1card/80 border border-f1border/80 text-center">
+                            <div class="text-f1red text-2xl font-display font-bold mb-1">2.6 秒</div>
+                            <div class="text-xs text-gray-400">0 - 100 km/h 彈射加速</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-f1card/80 border border-f1border/80 text-center">
+                            <div class="text-f1gold text-2xl font-display font-bold mb-1">350+ km/h</div>
+                            <div class="text-xs text-gray-400">直線賽道極限時速</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-f1card/80 border border-f1border/80 text-center">
+                            <div class="text-f1cyan text-2xl font-display font-bold mb-1">2.0 秒</div>
+                            <div class="text-xs text-gray-400">Pit Stop 換胎刷新極限</div>
+                        </div>
+                        <div class="p-4 rounded-xl bg-f1card/80 border border-f1border/80 text-center">
+                            <div class="text-emerald-400 text-2xl font-display font-bold mb-1">5G +</div>
+                            <div class="text-xs text-gray-400">高速過彎承受重力離心力</div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Interactive Team Finder Quiz -->
+            <section id="quiz" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+                <div class="bg-f1card border border-f1border rounded-2xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-f1red via-f1gold to-f1cyan"></div>
+
+                    <div class="text-center mb-8">
+                        <span class="text-f1red font-mono text-xs tracking-widest uppercase font-semibold">Interactive Team Quiz</span>
+                        <h2 class="text-2xl sm:text-4xl font-display font-extrabold text-white mt-1">
+                            🏎️ 尋找你的本命 F1 車隊
+                        </h2>
+                        <p class="text-gray-400 text-sm mt-2">4 道性格題，從全新 11 支車隊中測出最契合你的陣營與支持理由！</p>
+                    </div>
+
+                    <div v-if="!quizFinished" class="space-y-6">
+                        <div class="w-full bg-f1dark rounded-full h-2.5 overflow-hidden border border-f1border">
+                            <div class="bg-f1red h-full transition-all duration-300"
+                                 :style="{ width: ((currentQuestion + 1) / questions.length * 100) + '%' }"></div>
+                        </div>
+                        <div class="text-right text-xs text-gray-400 font-mono">
+                            問題 {{ currentQuestion + 1 }} / {{ questions.length }}
+                        </div>
+
+                        <div class="text-lg sm:text-xl font-bold text-white py-2">
+                            {{ questions[currentQuestion].text }}
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3">
+                            <button v-for="(opt, idx) in questions[currentQuestion].options" :key="idx"
+                                    @click="selectOption(opt.teamKey)"
+                                    class="text-left p-4 rounded-xl bg-f1dark/80 border border-f1border hover:border-f1red hover:bg-f1dark hover:shadow-lg transition-all group flex items-center justify-between">
+                                <span class="text-sm sm:text-base font-medium text-gray-300 group-hover:text-white">
+                                    {{ opt.label }}
+                                </span>
+                                <i class="fas fa-chevron-right text-xs text-gray-600 group-hover:text-f1red transition-colors"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-else class="text-center space-y-6">
+                        <div class="inline-block p-4 rounded-full bg-f1dark border border-f1border mb-2">
+                            <div class="text-5xl">{{ matchedTeam.emoji }}</div>
+                        </div>
+
+                        <div class="inline-block px-3 py-1 rounded bg-f1red/20 text-f1red font-mono text-xs uppercase font-bold border border-f1red/40">
+                            100% 性格相符 Match
+                        </div>
+
+                        <h3 class="text-3xl sm:text-4xl font-display font-black text-white">
+                            {{ matchedTeam.name }}
+                        </h3>
+                        <p class="text-f1gold font-mono text-sm tracking-wide">{{ matchedTeam.tagline }}</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left mt-6">
+                            <div class="p-4 rounded-xl bg-f1dark/70 border border-f1border/80">
+                                <div class="text-xs text-gray-400 font-mono mb-1">🏛️ 車隊文化</div>
+                                <div class="text-sm text-gray-200 font-medium">{{ matchedTeam.culture }}</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-f1dark/70 border border-f1border/80">
+                                <div class="text-xs text-gray-400 font-mono mb-1">🏁 現役主力車手</div>
+                                <div class="text-sm text-gray-200 font-medium">{{ matchedTeam.drivers }}</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-f1dark/70 border border-f1border/80">
+                                <div class="text-xs text-gray-400 font-mono mb-1">💡 新手支持理由</div>
+                                <div class="text-sm text-gray-200 font-medium">{{ matchedTeam.reason }}</div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+                            <button @click="resetQuiz"
+                                    class="px-6 py-3 rounded-xl bg-f1dark border border-f1border hover:border-gray-400 text-gray-300 font-bold text-sm transition-all">
+                                <i class="fas fa-redo-alt mr-2"></i>重新測驗
+                            </button>
+                            <a href="#teams" @click="activeNav = 'teams'"
+                               class="px-6 py-3 rounded-xl bg-f1red hover:bg-red-600 text-white font-bold text-sm shadow-lg shadow-f1red/30 transition-all">
+                                <i class="fas fa-users mr-2"></i>查看車隊與車手完整名鑑
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- F1 Basics 101 & Searchable Jargon Dictionary -->
+            <section id="basics" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+                <div class="text-center mb-12">
+                    <span class="text-f1red font-mono text-xs tracking-widest uppercase font-semibold">F1 Basics 101</span>
+                    <h2 class="text-3xl sm:text-5xl font-display font-black text-white mt-1">
+                        觀賽基礎與術語字典
+                    </h2>
+                    <p class="text-gray-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+                        秒懂比賽流程、旗號與常見轉播術語，第一次聽英文轉播也能看懂戰術角力！
+                    </p>
+                </div>
+
+                <!-- Weekend Schedule -->
+                <div class="mb-16">
+                    <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-f1red"></i> 賽事週末三日流程 (Race Weekend)
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="p-6 rounded-2xl bg-f1card border border-f1border relative overflow-hidden group hover:border-f1red/50 transition-all">
+                            <div class="text-xs font-mono text-f1red uppercase tracking-wider mb-1">Friday 週五</div>
+                            <h4 class="text-xl font-bold text-white mb-3">自由練習 (Practice FP1/2)</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-4">
+                                車手與工程師進行測試，調校賽車空力平衡、測試長距離胎耗與找到最快極限過彎點。
+                            </p>
+                            <div class="inline-block px-3 py-1 rounded-full bg-f1dark text-xs text-gray-300 font-mono border border-f1border">
+                                💡 看點：測試全新升級套件與無線電溝通
+                            </div>
+                        </div>
+
+                        <div class="p-6 rounded-2xl bg-f1card border border-f1border relative overflow-hidden group hover:border-f1gold/50 transition-all">
+                            <div class="text-xs font-mono text-f1gold uppercase tracking-wider mb-1">Saturday 週六</div>
+                            <h4 class="text-xl font-bold text-white mb-3">排位賽 (Qualifying Q1-Q3)</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-4">
+                                採三階段淘汰制！車手拼絕頂單圈極速，爭奪週日正賽第一起跑位的「桿位 (Pole Position)」。
+                            </p>
+                            <div class="inline-block px-3 py-1 rounded-full bg-f1dark text-xs text-f1gold font-mono border border-f1border">
+                                ⚡ 緊張感最高！容錯率趨近於 0
+                            </div>
+                        </div>
+
+                        <div class="p-6 rounded-2xl bg-f1card border border-f1border relative overflow-hidden group hover:border-emerald-500/50 transition-all">
+                            <div class="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-1">Sunday 週日</div>
+                            <h4 class="text-xl font-bold text-white mb-3">正賽決戰 (Grand Prix)</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-4">
+                                約 300 公里高張力對決！包含起跑起步攻防、強制進站換胎戰術、超車大戰與最後方格旗榮耀。
+                            </p>
+                            <div class="inline-block px-3 py-1 rounded-full bg-f1dark text-xs text-emerald-400 font-mono border border-f1border">
+                                🏆 前 10 名獲取年度世界冠軍積分
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flags Section -->
+                <div class="mb-16">
+                    <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-flag text-f1red"></i> 關鍵賽道旗號與安全車
+                    </h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div v-for="flag in flags" :key="flag.name"
+                             @click="selectedFlag = flag"
+                             :class="[
+                                selectedFlag && selectedFlag.name === flag.name ? 'border-f1red bg-f1dark shadow-lg shadow-f1red/20 scale-105' : 'border-f1border bg-f1card hover:border-gray-500',
+                                'p-4 rounded-xl border cursor-pointer transition-all text-center group'
+                             ]">
+                            <div class="w-12 h-12 mx-auto mb-3 rounded-lg flex items-center justify-center font-black text-xl shadow-inner"
+                                 :style="{ background: flag.bg, color: flag.textColor || '#fff' }">
+                                <i :class="flag.icon"></i>
+                            </div>
+                            <div class="font-bold text-white text-sm group-hover:text-f1red transition-colors">{{ flag.name }}</div>
+                            <div class="text-[11px] text-gray-400 font-mono mt-1">{{ flag.shortDesc }}</div>
+                        </div>
+                    </div>
+
+                    <div v-if="selectedFlag" class="mt-4 p-5 rounded-xl bg-f1dark border border-f1red/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg shrink-0"
+                                 :style="{ background: selectedFlag.bg, color: selectedFlag.textColor || '#fff' }">
+                                <i :class="selectedFlag.icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-base">{{ selectedFlag.name }}：規則詳解</h4>
+                                <p class="text-sm text-gray-300">{{ selectedFlag.fullDesc }}</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-f1gold font-mono bg-f1gold/10 px-3 py-1.5 rounded-lg border border-f1gold/20 shrink-0">
+                            {{ selectedFlag.scenario }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Searchable Glossary -->
+                <div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-search text-f1red"></i> 白話術語字典 (Glossary)
+                        </h3>
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="relative flex-1 sm:w-64">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input v-model="jargonSearch" type="text" placeholder="搜尋術語 (DRS, Box, Apex)..."
+                                       class="w-full pl-9 pr-4 py-2 bg-f1dark border border-f1border rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-f1red transition-colors">
+                            </div>
+                            <div class="flex gap-1 bg-f1dark p-1 rounded-xl border border-f1border text-xs">
+                                <button v-for="cat in jargonCategories" :key="cat.id"
+                                        @click="jargonCategory = cat.id"
+                                        :class="[
+                                            jargonCategory === cat.id ? 'bg-f1red text-white font-bold' : 'text-gray-400 hover:text-white',
+                                            'px-3 py-1.5 rounded-lg transition-colors'
+                                        ]">
+                                    {{ cat.label }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="item in filteredJargons" :key="item.term"
+                             class="p-5 rounded-2xl bg-f1card border border-f1border hover:border-f1red/50 transition-all flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-display font-black text-lg text-white tracking-wide">{{ item.term }}</span>
+                                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-f1dark text-f1cyan border border-f1border">
+                                        {{ item.categoryLabel }}
+                                    </span>
+                                </div>
+                                <h5 class="text-xs font-bold text-f1gold mb-2">{{ item.cnName }}</h5>
+                                <p class="text-xs text-gray-300 leading-relaxed mb-4">{{ item.explanation }}</p>
+                            </div>
+                            <div class="text-[11px] text-gray-400 font-mono pt-3 border-t border-f1border/60 flex items-center gap-1.5">
+                                <i class="fas fa-lightbulb text-amber-400 text-xs"></i>
+                                <span>情境：{{ item.example }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History & Legendary Dramas Timeline -->
+            <section id="history" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+                <div class="text-center mb-12">
+                    <span class="text-f1red font-mono text-xs tracking-widest uppercase font-semibold">History & Dramas</span>
+                    <h2 class="text-3xl sm:text-5xl font-display font-black text-white mt-1">
+                        經典宿敵與歷史戲劇時刻
+                    </h2>
+                    <p class="text-gray-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+                        這不只是賽車，更是生死交織的意志力與宿敵對決！
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
+                    <button v-for="drama in dramas" :key="drama.year"
+                            @click="selectedDrama = drama"
+                            :class="[
+                                selectedDrama && selectedDrama.year === drama.year ? 'bg-f1red text-white shadow-lg shadow-f1red/30' : 'bg-f1card text-gray-400 hover:text-white border border-f1border',
+                                'px-5 py-2.5 rounded-xl text-sm font-display font-bold shrink-0 transition-all flex items-center gap-2'
+                            ]">
+                        <span>{{ drama.year }}</span>
+                        <span class="text-xs font-normal opacity-80">({{ drama.shortTitle }})</span>
+                    </button>
+                </div>
+
+                <div v-if="selectedDrama" class="p-6 sm:p-10 rounded-2xl bg-f1card border border-f1border shadow-2xl relative overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                        <div class="lg:col-span-7 space-y-4">
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 rounded bg-f1red/20 text-f1red font-display font-bold text-sm border border-f1red/30">
+                                    {{ selectedDrama.year }} 年代
+                                </span>
+                                <span class="text-xs font-mono text-gray-400">主題：{{ selectedDrama.tag }}</span>
+                            </div>
+
+                            <h3 class="text-2xl sm:text-4xl font-display font-extrabold text-white leading-tight">
+                                {{ selectedDrama.title }}
+                            </h3>
+
+                            <p class="text-sm sm:text-base text-gray-300 leading-relaxed">
+                                {{ selectedDrama.fullStory }}
+                            </p>
+
+                            <div class="p-4 rounded-xl bg-f1dark border-l-4 border-f1gold text-xs sm:text-sm text-gray-300 italic">
+                                "{{ selectedDrama.quote }}"
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-5 bg-f1dark/80 p-6 rounded-xl border border-f1border space-y-4">
+                            <h4 class="text-xs font-mono text-f1cyan uppercase tracking-wider">🎯 歷史深遠影響</h4>
+                            <ul class="space-y-3 text-xs sm:text-sm text-gray-300">
+                                <li v-for="(impact, idx) in selectedDrama.impacts" :key="idx" class="flex items-start gap-2">
+                                    <i class="fas fa-check-circle text-f1red mt-1 shrink-0"></i>
+                                    <span>{{ impact }}</span>
+                                </li>
+                            </ul>
+
+                            <div class="pt-4 border-t border-f1border/60">
+                                <div class="text-[11px] text-gray-400 font-mono mb-1">🎬 延伸影視作品推薦</div>
+                                <div class="text-xs font-bold text-f1gold flex items-center gap-2">
+                                    <i class="fas fa-film"></i> {{ selectedDrama.movieRecommendation }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Circuit Guide -->
+            <section id="circuits" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+                <div class="text-center mb-12">
+                    <span class="text-f1red font-mono text-xs tracking-widest uppercase font-semibold">Circuit Guide</span>
+                    <h2 class="text-3xl sm:text-5xl font-display font-black text-white mt-1">
+                        殿堂級賽道圖鑑
+                    </h2>
+                    <p class="text-gray-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+                        探索摩納哥窄巷、斯帕森林盲彎與拉斯維加斯霓虹狂飆！
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+                    <button v-for="c in circuits" :key="c.id"
+                            @click="selectedCircuit = c"
+                            :class="[
+                                selectedCircuit && selectedCircuit.id === c.id ? 'bg-f1red text-white border-f1red shadow-lg shadow-f1red/20' : 'bg-f1card text-gray-400 border-f1border hover:border-gray-500',
+                                'p-3 rounded-xl border font-bold text-xs sm:text-sm transition-all text-center flex flex-col items-center gap-1'
+                            ]">
+                        <span class="text-base">{{ c.flagEmoji }}</span>
+                        <span>{{ c.name }}</span>
+                    </button>
+                </div>
+
+                <div v-if="selectedCircuit" class="p-6 sm:p-10 rounded-2xl bg-f1card border border-f1border grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <div class="lg:col-span-6 space-y-6">
+                        <div>
+                            <div class="flex items-center gap-2 text-xs font-mono text-f1cyan mb-1">
+                                <span>{{ selectedCircuit.country }}</span> • <span>{{ selectedCircuit.type }}</span>
+                            </div>
+                            <h3 class="text-3xl font-display font-black text-white flex items-center gap-3">
+                                <span>{{ selectedCircuit.flagEmoji }}</span>
+                                <span>{{ selectedCircuit.name }}</span>
+                                <span class="text-sm font-mono text-gray-400 font-normal">({{ selectedCircuit.englishName }})</span>
+                            </h3>
+                        </div>
+
+                        <div class="space-y-4 bg-f1dark/80 p-5 rounded-xl border border-f1border">
+                            <div>
+                                <div class="flex justify-between text-xs font-mono mb-1">
+                                    <span class="text-gray-400">超車難度 (Overtaking)</span>
+                                    <span class="text-f1red font-bold">{{ selectedCircuit.metrics.overtaking }}/10</span>
+                                </div>
+                                <div class="w-full bg-f1dark rounded-full h-2 border border-f1border overflow-hidden">
+                                    <div class="bg-f1red h-full" :style="{ width: (selectedCircuit.metrics.overtaking * 10) + '%' }"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs font-mono mb-1">
+                                    <span class="text-gray-400">極速需求 (Top Speed)</span>
+                                    <span class="text-f1gold font-bold">{{ selectedCircuit.metrics.speed }}/10</span>
+                                </div>
+                                <div class="w-full bg-f1dark rounded-full h-2 border border-f1border overflow-hidden">
+                                    <div class="bg-f1gold h-full" :style="{ width: (selectedCircuit.metrics.speed * 10) + '%' }"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs font-mono mb-1">
+                                    <span class="text-gray-400">撞牆風險 (Wall Danger)</span>
+                                    <span class="text-f1cyan font-bold">{{ selectedCircuit.metrics.danger }}/10</span>
+                                </div>
+                                <div class="w-full bg-f1dark rounded-full h-2 border border-f1border overflow-hidden">
+                                    <div class="bg-f1cyan h-full" :style="{ width: (selectedCircuit.metrics.danger * 10) + '%' }"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            {{ selectedCircuit.description }}
+                        </p>
+                    </div>
+
+                    <div class="lg:col-span-6 bg-f1dark p-6 rounded-2xl border border-f1border space-y-5">
+                        <div class="border-b border-f1border/60 pb-4">
+                            <div class="text-xs text-gray-400 font-mono mb-1">🏎️ 標誌性彎道</div>
+                            <div class="text-lg font-bold text-f1gold">{{ selectedCircuit.famousCorner }}</div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 border-b border-f1border/60 pb-4">
+                            <div>
+                                <div class="text-xs text-gray-400 font-mono mb-1">🏁 單圈長度</div>
+                                <div class="text-base font-bold text-white">{{ selectedCircuit.length }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-400 font-mono mb-1">⚡ 賽道最高極速</div>
+                                <div class="text-base font-bold text-white">{{ selectedCircuit.topSpeed }}</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-xs text-gray-400 font-mono mb-2">💡 新手看點懶人包</div>
+                            <p class="text-xs text-gray-300 leading-relaxed bg-f1card p-3 rounded-xl border border-f1border">
+                                {{ selectedCircuit.rookieFun }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Teams & Legends Hall of Fame -->
+            <section id="teams" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+                <div class="text-center mb-12">
+                    <span class="text-f1red font-mono text-xs tracking-widest uppercase font-semibold">Teams & Legends</span>
+                    <h2 class="text-3xl sm:text-5xl font-display font-black text-white mt-1">
+                        現役車隊與傳奇名人堂
+                    </h2>
+                    <p class="text-gray-400 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+                        點擊卡片可翻轉檢視 11 支車隊特色與看點！
+                    </p>
+                </div>
+
+                <div class="flex justify-center mb-8">
+                    <div class="bg-f1card p-1 rounded-xl border border-f1border flex gap-1 text-sm font-bold">
+                        <button @click="showTeamTab = 'current'"
+                                :class="showTeamTab === 'current' ? 'bg-f1red text-white' : 'text-gray-400 hover:text-white'"
+                                class="px-5 py-2 rounded-lg transition-colors">
+                            🏎️ 現役 11 支車隊
+                        </button>
+                        <button @click="showTeamTab = 'legends'"
+                                :class="showTeamTab === 'legends' ? 'bg-f1red text-white' : 'text-gray-400 hover:text-white'"
+                                class="px-5 py-2 rounded-lg transition-colors">
+                            🏆 歷史傳奇名人堂
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Current 11 Grid Teams -->
+                <div v-if="showTeamTab === 'current'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="team in mainTeams" :key="team.name"
+                         @click="team.flipped = !team.flipped"
+                         class="h-72 perspective-1000 cursor-pointer group">
+                        
+                        <div :class="team.flipped ? 'rotate-y-180' : ''"
+                             class="w-full h-full relative transition-transform duration-500 transform-style-3d">
+                            
+                            <!-- Front -->
+                            <div class="absolute inset-0 w-full h-full bg-f1card border border-f1border rounded-2xl p-6 flex flex-col justify-between backface-hidden group-hover:border-f1red/60 transition-colors">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-xs font-mono text-gray-400">引擎: {{ team.engine }}</span>
+                                    <span class="w-3 h-3 rounded-full" :style="{ background: team.color }"></span>
+                                </div>
+
+                                <div>
+                                    <div class="text-3xl mb-1">{{ team.emoji }}</div>
+                                    <h3 class="text-2xl font-display font-black text-white">{{ team.name }}</h3>
+                                    <p class="text-xs text-f1gold font-mono">{{ team.titleCount }} 次世界冠軍</p>
+                                </div>
+
+                                <div class="pt-3 border-t border-f1border text-xs text-gray-400 flex justify-between items-center">
+                                    <span>主力車手：{{ team.drivers }}</span>
+                                    <span class="text-f1red text-[11px] font-mono">點擊翻轉 🔄</span>
+                                </div>
+                            </div>
+
+                            <!-- Back -->
+                            <div class="absolute inset-0 w-full h-full bg-f1dark border border-f1red/60 rounded-2xl p-6 flex flex-col justify-between rotate-y-180 backface-hidden">
+                                <div>
+                                    <h4 class="font-bold text-white text-base mb-2">
+                                        {{ team.name }}
+                                    </h4>
+                                    <p class="text-xs text-gray-300 leading-relaxed mb-3">{{ team.details }}</p>
+                                </div>
+
+                                <div class="bg-f1card p-3 rounded-xl border border-f1border text-[11px] text-gray-300 space-y-1">
+                                    <div class="text-f1cyan font-bold">🏁 觀賽看點：</div>
+                                    <div>{{ team.highlight }}</div>
+                                </div>
+
+                                <div class="text-right text-[10px] text-gray-500 font-mono">再次點擊翻回</div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legends Hall of Fame -->
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="legend in legends" :key="legend.name"
+                         class="p-6 rounded-2xl bg-f1card border border-f1border hover:border-f1gold/50 transition-all space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded bg-f1gold/10 text-f1gold font-display font-bold text-xs border border-f1gold/30">
+                                🏆 {{ legend.titles }} 屆世界冠軍
+                            </span>
+                            <span class="text-xs text-gray-400 font-mono">{{ legend.era }}</span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-2xl font-display font-black text-white">{{ legend.name }}</h3>
+                            <div class="text-xs text-f1red font-mono mt-0.5">{{ legend.nickname }}</div>
+                        </div>
+
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            {{ legend.summary }}
+                        </p>
+
+                        <div class="pt-3 border-t border-f1border text-[11px] text-gray-400 italic">
+                            標誌性時刻：{{ legend.iconicMoment }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Viewing Toolkit & Netflix DTS Guide -->
+            <section id="toolkit" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
+                <div class="bg-gradient-to-br from-f1card via-f1dark to-f1card border border-f1border rounded-3xl p-6 sm:p-12 shadow-2xl space-y-12">
+                    
+                    <div class="text-center max-w-2xl mx-auto">
+                        <span class="text-f1red font-mono text-xs tracking-widest uppercase font-semibold">Viewing Toolkit</span>
+                        <h2 class="text-3xl sm:text-4xl font-display font-black text-white mt-1">
+                            新手觀賽工具包
+                        </h2>
+                        <p class="text-gray-400 text-sm mt-2">
+                            搭配 Netflix 影集與輪胎攻略，第一次看轉播就上手！
+                        </p>
+                    </div>
+
+                    <!-- DTS Guide -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fab fa-netflix text-red-600 text-xl"></i>
+                            Netflix《極速求生 Drive to Survive》新手必看精選集數
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div v-for="ep in dtsEpisodes" :key="ep.title"
+                                 class="p-4 rounded-xl bg-f1dark border border-f1border hover:border-red-600/50 transition-all">
+                                <div class="text-xs font-mono text-red-500 font-bold mb-1">{{ ep.season }}</div>
+                                <h4 class="font-bold text-white text-sm mb-2">{{ ep.title }}</h4>
+                                <p class="text-xs text-gray-400 leading-relaxed">{{ ep.whyWatch }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tire Color Strategy Chart -->
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-circle-notch text-f1gold"></i>
+                            輪胎顏色與戰術密碼
+                        </h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                            <div class="p-4 rounded-xl bg-f1dark border border-red-500/40 text-center">
+                                <div class="w-8 h-8 rounded-full border-4 border-red-500 mx-auto mb-2 bg-transparent"></div>
+                                <div class="font-bold text-white text-sm">軟胎 (Soft)</div>
+                                <div class="text-[11px] text-gray-400 mt-1">紅字標誌 • 極速最快但衰退極快，用於排位賽拼單圈</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-f1dark border border-yellow-500/40 text-center">
+                                <div class="w-8 h-8 rounded-full border-4 border-yellow-400 mx-auto mb-2 bg-transparent"></div>
+                                <div class="font-bold text-white text-sm">中性胎 (Medium)</div>
+                                <div class="text-[11px] text-gray-400 mt-1">黃字標誌 • 正賽最均衡配方，兼具抓地力與里程</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-f1dark border border-white/40 text-center">
+                                <div class="w-8 h-8 rounded-full border-4 border-white mx-auto mb-2 bg-transparent"></div>
+                                <div class="font-bold text-white text-sm">硬胎 (Hard)</div>
+                                <div class="text-[11px] text-gray-400 mt-1">白字標誌 • 起步慢但超長壽，長距離戰術必備</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-f1dark border border-emerald-500/40 text-center">
+                                <div class="w-8 h-8 rounded-full border-4 border-emerald-500 mx-auto mb-2 bg-transparent"></div>
+                                <div class="font-bold text-white text-sm">半雨胎 (Inter)</div>
+                                <div class="text-[11px] text-gray-400 mt-1">綠字標誌 • 濕滑賽道，可排水且維持基本速差</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-f1dark border border-blue-500/40 text-center">
+                                <div class="w-8 h-8 rounded-full border-4 border-blue-500 mx-auto mb-2 bg-transparent"></div>
+                                <div class="font-bold text-white text-sm">全雨胎 (Wet)</div>
+                                <div class="text-[11px] text-gray-400 mt-1">藍字標誌 • 豪雨積水，每秒排出高達 85 公升水</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-f1dark border-t border-f1border py-8 text-center text-xs text-gray-500 font-mono">
+            <div class="max-w-7xl mx-auto px-4 space-y-2">
+                <div class="flex items-center justify-center gap-2 text-gray-400 font-bold">
+                    <span class="text-f1red">More than just racing</span> — 絕不只是賽車
+                </div>
+                <p>非 Formula One Group 官方網站。僅作為賽車愛好者繁體中文教學推廣用途。</p>
+                <p>© 2026 Crafted with ❤️ for motorsport lovers worldwide.</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Vue 3 Application Script -->
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    activeNav: 'hero',
+                    mobileMenuOpen: false,
+
+                    navItems: [
+                        { id: 'quiz', label: '隊伍測驗', icon: 'fas fa-vial' },
+                        { id: 'basics', label: '新手 101', icon: 'fas fa-graduation-cap' },
+                        { id: 'history', label: '經典宿敵', icon: 'fas fa-history' },
+                        { id: 'circuits', label: '賽道圖鑑', icon: 'fas fa-map-marked-alt' },
+                        { id: 'teams', label: '11支車隊與車手', icon: 'fas fa-users' },
+                        { id: 'toolkit', label: '觀賽工具', icon: 'fas fa-toolbox' }
+                    ],
+
+                    // Quiz Logic with 11 Teams Support
+                    quizFinished: false,
+                    currentQuestion: 0,
+                    quizScores: { ferrari: 0, redbull: 0, mclaren: 0, mercedes: 0, aston: 0, alpine: 0, williams: 0, vcarb: 0, audi: 0, haas: 0, cadillac: 0 },
+                    questions: [
+                        {
+                            text: '1. 面對激烈競爭時，你最欣賞哪種團隊精神？',
+                            options: [
+                                { label: 'A. 擁抱百年賽車激情與紅色狂熱信仰 (Ferrari)', teamKey: 'ferrari' },
+                                { label: 'B. 狂野不羈、追求無情極速與冠軍壓制 (Red Bull Racing)', teamKey: 'redbull' },
+                                { label: 'C. 青春活力、歡樂氣氛與強勁逆襲 (McLaren)', teamKey: 'mclaren' },
+                                { label: 'D. 嚴謹德系數據控制與精密系統運作 (Mercedes-AMG)', teamKey: 'mercedes' },
+                                { label: 'E. 結合老將神級經驗與雄厚研發野心 (Aston Martin)', teamKey: 'aston' },
+                                { label: 'F. 迎難而上、帶著傳統老牌榮光重返前排 (Williams)', teamKey: 'williams' },
+                                { label: 'G. 美式美夢、雄厚資本與全新生力軍突破者 (Cadillac F1)', teamKey: 'cadillac' },
+                                { label: 'H. 德國頂級工業巨頭親自下場硬核造車 (Audi F1)', teamKey: 'audi' },
+                                { label: 'I. 法國熱情風格與不畏強權的浪漫奮戰 (Alpine)', teamKey: 'alpine' },
+                                { label: 'J. 美式接地氣、敢打敢拼的硬核黑馬 (Haas)', teamKey: 'haas' },
+                                { label: 'K. 年輕銳利、極具爆發力的青訓新星搖籃 (Racing Bulls VCARB)', teamKey: 'vcarb' }
+                            ]
+                        },
+                        {
+                            text: '2. 賽事遇到暴雨或突發混亂狀況時，你傾向？',
+                            options: [
+                                { label: 'A. 果斷進站換胎，展現極限駕馭能力 (Red Bull Racing)', teamKey: 'redbull' },
+                                { label: 'B. 相信熱血直覺拼超車，哪怕偶爾有戲劇性戰術失誤 (Ferrari)', teamKey: 'ferrari' },
+                                { label: 'C. 保持彈性與歡樂心態，跟著大局靈活應變 (McLaren)', teamKey: 'mclaren' },
+                                { label: 'D. 電腦精準計算後執行最佳備用計劃 (Mercedes-AMG)', teamKey: 'mercedes' },
+                                { label: 'E. 依靠老將神級經驗沉著應對，坐收漁翁之利 (Aston Martin)', teamKey: 'aston' },
+                                { label: 'F. 穩紮穩打搶積分，展現絕佳韌性 (Williams)', teamKey: 'williams' },
+                                { label: 'G. 敢想敢做、抓住混亂機會一戰成名 (Cadillac F1)', teamKey: 'cadillac' },
+                                { label: 'H. 嚴謹遵守工廠數據，冷靜執行指令 (Audi F1)', teamKey: 'audi' },
+                                { label: 'I. 混亂中爆發驚人速度奇襲前排 (Alpine)', teamKey: 'alpine' },
+                                { label: 'J. 靈活進站賭一把，拼出驚人成績 (Haas)', teamKey: 'haas' },
+                                { label: 'K. 展現年輕車手的衝勁與無所畏懼 (Racing Bulls VCARB)', teamKey: 'vcarb' }
+                            ]
+                        },
+                        {
+                            text: '3. 你最被哪種品牌底蘊與文化吸引？',
+                            options: [
+                                { label: 'A. 義式超跑奢華與紅魔傳奇信仰', teamKey: 'ferrari' },
+                                { label: 'B. 極限運動與突破邊界的極能挑戰', teamKey: 'redbull' },
+                                { label: 'C. 木瓜橙潮流科技感與年輕熱血', teamKey: 'mclaren' },
+                                { label: 'D. 德系頂級質感與霸氣銀箭帝國', teamKey: 'mercedes' },
+                                { label: 'E. 英倫紳士風格與強大雄心', teamKey: 'aston' },
+                                { label: 'F. 歷史悠久的王牌豪門復興夢', teamKey: 'williams' },
+                                { label: 'G. 通用汽車 (GM) 的美式奢華霸氣', teamKey: 'cadillac' },
+                                { label: 'H. 奧迪硬核科技與極致德系工程學', teamKey: 'audi' },
+                                { label: 'I. 雷諾/阿爾派的浪漫賽車血統', teamKey: 'alpine' },
+                                { label: 'J. 美國實用主義與親切黑馬精神', teamKey: 'haas' },
+                                { label: 'K. 充滿潮流與能量的年輕酷炫風格', teamKey: 'vcarb' }
+                            ]
+                        },
+                        {
+                            text: '4. 你在團隊中最常扮演的性格角色？',
+                            options: [
+                                { label: 'A. 承載所有期待的精神核心 (Ferrari)', teamKey: 'ferrari' },
+                                { label: 'B. 突破瓶頸的狂暴攻擊手 (Red Bull Racing)', teamKey: 'redbull' },
+                                { label: 'C. 親和力爆棚的氣氛擔當 (McLaren)', teamKey: 'mclaren' },
+                                { label: 'D. 冷靜的總指揮大腦 (Mercedes-AMG)', teamKey: 'mercedes' },
+                                { label: 'E. 默默累積實力的黑馬 (Aston Martin)', teamKey: 'aston' },
+                                { label: 'F. 越挫越勇的堅持者 (Williams)', teamKey: 'williams' },
+                                { label: 'G. 顛覆傳統的新世代挑戰者 (Cadillac F1)', teamKey: 'cadillac' },
+                                { label: 'H. 講求邏輯與品質的完美主義者 (Audi F1)', teamKey: 'audi' },
+                                { label: 'I. 充滿靈感與爆發力的戰士 (Alpine)', teamKey: 'alpine' },
+                                { label: 'J. 不拘小節、接地氣的行動派 (Haas)', teamKey: 'haas' },
+                                { label: 'K. 充滿潛力且衝勁十足的新秀 (Racing Bulls VCARB)', teamKey: 'vcarb' }
+                            ]
+                        }
+                    ],
+                    teamsData: {
+                        ferrari: {
+                            name: 'Scuderia Ferrari (法拉利)',
+                            emoji: '🏎️',
+                            tagline: '「百年激情與賽車魂的絕對象徵」',
+                            culture: 'F1 歷史最悠久、唯一參加過每一季的紅魔傳奇',
+                            drivers: 'Charles Leclerc / Lewis Hamilton',
+                            reason: '如果你喜歡充滿歷史傳奇、戲劇性張力與話題討論度，選法拉利就對了！'
+                        },
+                        redbull: {
+                            name: 'Red Bull Racing (紅牛)',
+                            emoji: '🐂',
+                            tagline: '「極致工程學與霸氣速霸王者」',
+                            culture: '搭檔 Red Bull Ford 動力單元，以極速壓制著稱的現代霸主',
+                            drivers: 'Max Verstappen / Liam Lawson',
+                            reason: '如果你喜歡極致的速度壓制、頂級工程設計與奪冠快感，加入紅牛最過癮！'
+                        },
+                        mclaren: {
+                            name: 'McLaren F1 Team (麥拉倫)',
+                            emoji: '🧡',
+                            tagline: '「木瓜橙狂潮！青春無敵的復興傳奇」',
+                            culture: '充滿歡樂氛圍與絕佳氣氛，強勢崛起的傳統豪門',
+                            drivers: 'Lando Norris / Oscar Piastri',
+                            reason: '如果你喜歡年輕有活力的車手搭檔與逆襲故事，麥拉倫絕對圈粉！'
+                        },
+                        mercedes: {
+                            name: 'Mercedes-AMG PETRONAS (賓士)',
+                            emoji: '🩶',
+                            tagline: '「極致嚴謹的德系精工與銀箭帝國」',
+                            culture: '創下 F1 車隊 8 連霸紀錄，以數據精準與戰術著稱',
+                            drivers: 'George Russell / Kimi Antonelli',
+                            reason: '如果你崇尚極致系統化、專業冷靜與強大修復韌性，賓士車隊最符合你！'
+                        },
+                        aston: {
+                            name: 'Aston Martin Aramco (阿斯頓馬丁)',
+                            emoji: '💚',
+                            tagline: '「賽道綠紳士！Honda 廠隊加持與巨額雄心」',
+                            culture: '擁有賽道老神仙 Fernando Alonso 與 Honda 廠隊引擎戰略支持',
+                            drivers: 'Fernando Alonso / Lance Stroll',
+                            reason: '如果你喜歡低調奢華質感與老將神級操盤經驗，選它準沒錯！'
+                        },
+                        williams: {
+                            name: 'Williams Racing (威廉斯)',
+                            emoji: '💙',
+                            tagline: '「老牌豪門的偉大復興之路」',
+                            culture: '擁有無數歷史世界冠軍底蘊，深受全網車迷喜愛的復興車隊',
+                            drivers: 'Alexander Albon / Carlos Sainz',
+                            reason: '如果你喜歡充滿底蘊、越挫越勇並一步步重返巔峰的感人故事，威廉斯是首選！'
+                        },
+                        cadillac: {
+                            name: 'Cadillac F1 Team (凱迪拉克)',
+                            emoji: '🦅',
+                            tagline: '「第11支新軍！通用汽車美式雄心」',
+                            culture: '全新加盟的第 11 支車隊，代表美式賽車巨頭衝擊頂級賽車殿堂',
+                            drivers: '美國實力新秀與資深名將陣容',
+                            reason: '如果你喜歡見證全新勢力崛起、打破既有秩序的挑戰者故事，支持 Cadillac！'
+                        },
+                        audi: {
+                            name: 'Audi F1 Team (奧迪)',
+                            emoji: '🔴',
+                            tagline: '「德系四環巨頭！硬核入局」',
+                            culture: '全面收購 Sauber 並打造 Audi 專屬 Power Unit 的德系新廠隊',
+                            drivers: 'Nico Hülkenberg / Gabriel Bortoleto',
+                            reason: '如果你相信德國極致工業實力與全新廠隊的長期潛力，奧迪是最佳選擇！'
+                        },
+                        alpine: {
+                            name: 'Alpine F1 Team (阿爾派)',
+                            emoji: '🇫🇷',
+                            tagline: '「法式浪漫與黑馬爆發力」',
+                            culture: '代表法國賽車精神，具備隨時在混亂戰局中登上領獎台的爆發力',
+                            drivers: 'Pierre Gasly / Jack Doohan',
+                            reason: '如果你喜歡性格鮮明、隨時能在混亂戰局爆發高光時刻的車隊，Alpine 很適合你！'
+                        },
+                        haas: {
+                            name: 'Haas F1 Team (哈斯)',
+                            emoji: '🇺🇸',
+                            tagline: '「硬核接地氣！小資本大智慧」',
+                            culture: '唯一的美國精簡戰鬥車隊，與法拉利深度技術合作',
+                            drivers: 'Esteban Ocon / Oliver Bearman',
+                            reason: '如果你喜歡小團隊發揮最大效率、親切接地氣的戰鬥作風，哈斯會讓你愛不釋手！'
+                        },
+                        vcarb: {
+                            name: 'Racing Bulls (VCARB)',
+                            emoji: '⚡',
+                            tagline: '「紅牛青年軍！潮流爆發力」',
+                            culture: '極具潮流感與年輕能量，專為頂級車隊輸送超級新星的搖籃',
+                            drivers: 'Yuki Tsunoda / Isack Hadjar',
+                            reason: '如果你喜歡充滿個性、酷炫潮流感以及關注下一代世界冠軍新星，選 Racing Bulls！'
+                        }
+                    },
+
+                    // Flag Data
+                    selectedFlag: null,
+                    flags: [
+                        {
+                            name: '黃旗 (Yellow Flag)',
+                            shortDesc: '前有危險・禁止超車',
+                            fullDesc: '賽道前有事故、掉落零件或故障停擺車輛。車手必須立即減速、禁止進行任何超車動作。若在黃旗區間超車會面臨嚴厲罰時或扣分。',
+                            scenario: '車打滑打轉或機械故障停於賽道邊緣',
+                            bg: '#EAB308',
+                            textColor: '#000',
+                            icon: 'fas fa-exclamation-triangle'
+                        },
+                        {
+                            name: '紅旗 (Red Flag)',
+                            shortDesc: '比賽中斷・全員進站',
+                            fullDesc: '賽道發生嚴重事故、天候暴雨極端惡劣或護欄毀損需緊急修復。所有賽車必須立即慢速駛回 Pit 區依序排隊等待重啟。',
+                            scenario: '重大撞車事故或暴雨無法安全行駛',
+                            bg: '#EF4444',
+                            textColor: '#fff',
+                            icon: 'fas fa-ban'
+                        },
+                        {
+                            name: '藍旗 (Blue Flag)',
+                            shortDesc: '讓路給領頭套圈車',
+                            fullDesc: '提醒被套圈（慢一圈以上）的車手，後方有領頭爭冠車輛逼近。被出示藍旗的車手必須在 3 個彎道內主動讓出賽線避讓。',
+                            scenario: '領先車手準備超慢車套圈',
+                            bg: '#3B82F6',
+                            textColor: '#fff',
+                            icon: 'fas fa-forward'
+                        },
+                        {
+                            name: '安全車 (Safety Car)',
+                            shortDesc: '領頭壓車・凍結車距',
+                            fullDesc: '當事故較大但無需紅旗中斷時，Mercedes/Aston Martin 安全車帶頭壓制全場車速。所有人禁止超車，車距大幅拉近，是進站戰術大洗牌黃金時機！',
+                            scenario: '賽道殘骸清理需要數圈時間',
+                            bg: '#F59E0B',
+                            textColor: '#000',
+                            icon: 'fas fa-car'
+                        },
+                        {
+                            name: '方格旗 (Checkered)',
+                            shortDesc: '比賽結束・榮耀時刻',
+                            fullDesc: '領頭車手跨越終點線時揮舞，代表 Grand Prix 正賽或排位賽正式結束。',
+                            scenario: '完成規定的賽事總圈數',
+                            bg: '#374151',
+                            textColor: '#fff',
+                            icon: 'fas fa-flag-checkered'
+                        }
+                    ],
+
+                    // Jargon Glossary Data
+                    jargonSearch: '',
+                    jargonCategory: 'all',
+                    jargonCategories: [
+                        { id: 'all', label: '全部' },
+                        { id: 'tech', label: '技術空力' },
+                        { id: 'strategy', label: '進站戰術' },
+                        { id: 'rules', label: '賽事規則' }
+                    ],
+                    jargons: [
+                        {
+                            term: 'DRS',
+                            cnName: '可變尾翼系統 (Drag Reduction System)',
+                            category: 'tech',
+                            categoryLabel: '技術空力',
+                            explanation: '在指定檢測點跟隨前車 1 秒以內時，可手動開啟後尾翼掀蓋降低風阻，直線極速可瞬間提升 10-12 km/h，為超車主要武器。',
+                            example: '「Verstappen 開啟 DRS 在大直線輕易超越了前車！」'
+                        },
+                        {
+                            term: 'Downforce',
+                            cnName: '下壓力 / 空氣動力',
+                            category: 'tech',
+                            categoryLabel: '技術空力',
+                            explanation: '氣流通過賽車車身與底板產生的向下壓迫力。下壓力越大，車輛在高速彎道的抓地力與過彎極速越高。',
+                            example: '「摩納哥賽道需要調校至最高下壓力模式以應對密集彎道。」'
+                        },
+                        {
+                            term: 'Undercut',
+                            cnName: '提前進站換胎戰術',
+                            category: 'strategy',
+                            categoryLabel: '進站戰術',
+                            explanation: '比對手「提前一至兩圈」進站換上全新抓地力輪胎，利用新胎極快圈速拉開差距，等對方隨後進站時順利在賽道上翻盤超越。',
+                            example: '「McLaren 執行完美的 Undercut，成功翻盤登頂！」'
+                        },
+                        {
+                            term: 'Overcut',
+                            cnName: '延後進站戰術',
+                            category: 'strategy',
+                            categoryLabel: '進站戰術',
+                            explanation: '對手進站陷入慢車集團時，留在賽道上用乾淨空氣（Clean Air）狂飆累積時間優勢，再進站出來維持領先。',
+                            example: '「在輪胎退化極慢的賽道，Overcut 往往是致勝關鍵。」'
+                        },
+                        {
+                            term: 'Box, Box',
+                            cnName: '進站指令',
+                            category: 'strategy',
+                            categoryLabel: '進站戰術',
+                            explanation: '工程師在無線電對車手喊出的「本圈進站（Box/Pit Stop）」指令。字源來自德文 Pitbox。',
+                            example: '「"Box, Box, Box! Radio Check!" 車隊下達進站指令。」'
+                        },
+                        {
+                            term: 'Apex',
+                            cnName: '彎心 / 切角點',
+                            category: 'rules',
+                            categoryLabel: '賽事規則',
+                            explanation: '過彎路線中最靠近彎道內側的最佳切入點。「外-內-外」走線能讓賽車以最大速度與最小離心力通過彎道。',
+                            example: '「車手必須精準擊中 Apex 才能早點踩下油門出彎。」'
+                        },
+                        {
+                            term: 'Porpoising',
+                            cnName: '豚躍現象 (海豚跳)',
+                            category: 'tech',
+                            categoryLabel: '技術空力',
+                            explanation: '地面效應賽車在直線高速行駛時，下壓力突發性失去與恢復導致車身像海豚一樣高頻上下劇烈震動彈跳。',
+                            example: '「2022 年新規導入時，許多車隊陷入豚躍現象苦戰。」'
+                        },
+                        {
+                            term: 'Parc Fermé',
+                            cnName: '封閉區規則',
+                            category: 'rules',
+                            categoryLabel: '賽事規則',
+                            explanation: '排位賽開始後，賽車進入監管狀態，禁止進行任何大幅度改裝或調整調校，違者將受到退後起跑或從 Pit 區起跑處罰。',
+                            example: '「車隊在 Parc Fermé 啟用前做最後的避震器設定調整。」'
+                        },
+                        {
+                            term: 'Telemetry',
+                            cnName: '車載遙測數據',
+                            category: 'tech',
+                            categoryLabel: '技術空力',
+                            explanation: '數百個感測器實時傳送油門、煞車深度、胎溫、引擎轉速等數據給維修區工程師與總部數據中心。',
+                            example: '「工程師透過去遙測數據比對發現 3 號彎少了 0.2 秒。」'
+                        }
+                    ],
+
+                    // Historic Dramas Data
+                    selectedDrama: null,
+                    dramas: [
+                        {
+                            year: '1976',
+                            shortTitle: '鋼鐵意志',
+                            tag: '死裡逃生與血性對決',
+                            title: 'Niki Lauda 與 James Hunt 冰與火交鋒',
+                            fullStory: 'Niki Lauda 在綠色地獄紐柏林賽道遭遇可怕車禍被火海包圍，肺部嚴重灼傷。然而僅 6 週（42 天）後，他頂著未癒合出血的傷口重返賽場，與瀟灑狂野的英國車手 James Hunt 角逐冠軍至最後一站日本富士站雨戰，傳奇故事被改編成經典電影《極速風流 Rush》。',
+                            quote: '「比起死亡，我更無法忍受坐在電視前看別人駕駛我的車奪冠。」',
+                            impacts: [
+                                '將 F1 車手的職業專業度與體能訓練推向新高度',
+                                '全面推動賽道救援、防火服與賽車安全標準變革',
+                                '成為 F1 歷史上最膾炙人口的性格名場面'
+                            ],
+                            movieRecommendation: '電影《極速風流 Rush》 (2013)'
+                        },
+                        {
+                            year: '1989-1990',
+                            shortTitle: 'Senna vs Prost',
+                            tag: '同隊世紀仇敵',
+                            title: 'Ayrton Senna vs Alain Prost：車神與教授的鈴鹿大撞車',
+                            fullStory: '麥拉倫隊友 Senna（車神）與 Prost（教授）性格完全相反。1989 年日本鈴鹿站兩人於三角彎相撞，Prost 奪冠；1990 年回到鈴鹿，站在桿位的 Senna 認為起跑位被分配至髒路線不公，起跑第 1 彎直接以 270 km/h 時速未煞車撞向 Prost 雙雙退賽，直接封冠。',
+                            quote: '「如果你不再追求存在的縫隙，你就不是賽車手了。」— Ayrton Senna',
+                            impacts: [
+                                '重新定義隊友關係與極限攻防邊界',
+                                '引發國際汽聯 (FIA) 對裁判公平性與條例的大幅改革',
+                                '奠定 Senna 狂熱純粹的賽車神話地位'
+                            ],
+                            movieRecommendation: '紀錄片《車神洗拿 Senna》 (2010)'
+                        },
+                        {
+                            year: '2000-2004',
+                            shortTitle: '法拉利紅魔王朝',
+                            tag: 'Schumacher 五連霸',
+                            title: 'Michael Schumacher 與法拉利五連霸紅魔帝國',
+                            fullStory: '車神 Schumacher 與戰術大師 Ross Brawn、車隊領隊 Jean Todt 組成鐵三角，將團隊戰術執行力、體能訓練與工程試車推向極致，創下震撼世界的車隊五連霸（2000-2004），將紅色法拉利推上神壇。',
+                            quote: '「信仰就是從不放棄，即使所有數據都顯示不可能。」',
+                            impacts: [
+                                '將車手體能要求提升至運動員巔峰',
+                                '開創多停進站戰術（Multi-pit strategy）與單圈極限進攻模式',
+                                '法拉利王國在全球奠定不可動搖的紅魔 Tifosi 信仰'
+                            ],
+                            movieRecommendation: '紀錄片《車神舒馬克 Schumacher》 (Netflix)'
+                        },
+                        {
+                            year: '2020',
+                            shortTitle: 'Halo 救命奇蹟',
+                            tag: '科技救生 28 秒',
+                            title: 'Romain Grosjean 巴林火海穿越奇蹟',
+                            fullStory: '2020 年巴林站起跑圈，Grosjean 以 241 km/h 高速撞擊鋼製護欄，車身斷成兩截並引發高溫大火（28G 撞擊力）。原本被車迷詬病醜陋的 Halo 人字頭部保護架承受巨大衝擊切開護欄，護住車手頭部，Grosjean 在烈火中焚燒 28 秒後自行爬出火海奇蹟生還！',
+                            quote: '「如果沒有 Halo，今天我就無法站在這裡跟我的孩子說話了。」',
+                            impacts: [
+                                '徹底洗刷車迷與車手對 Halo 保護架視覺外觀的偏見',
+                                '證明碳纖維單體殼與 Halo 是現代賽車史上最偉大的安全發明',
+                                '啟動更嚴苛的防火服（抗火時間延長）規範'
+                            ],
+                            movieRecommendation: '《Drive to Survive》第三季第九集 "Man on Fire"'
+                        },
+                        {
+                            year: '2021',
+                            shortTitle: '阿布達比世紀絕殺',
+                            tag: '最後一圈決戰',
+                            title: 'Verstappen vs Hamilton 阿布達比最後一圈大決戰',
+                            fullStory: '2021 賽季經過 21 站激戰後，Hamilton 與 Verstappen 以同分進入最終站阿布達比！Hamilton一路領先至最後幾圈，因黃旗安全車引發爭議性的重啟程序，Verstappen 趁機換上新軟胎，在最後一圈（Lap 58）第 5 彎絕殺超越 Hamilton 首次奪得世界冠軍。',
+                            quote: '「這是絕對的戲劇性！這就是為什麼我們愛 F1！」',
+                            impacts: [
+                                '創下 F1 近 20 年來最高全球收視紀錄',
+                                'FIA 重新整頓賽事控管團隊（Race Control）與安全車程序規範',
+                                '引爆紅牛與賓士車隊高層的世紀嘴砲外交大戰'
+                            ],
+                            movieRecommendation: '《Drive to Survive》第四季第十集 "Reckoning"'
+                        }
+                    ],
+
+                    // Circuit Data
+                    selectedCircuit: null,
+                    circuits: [
+                        {
+                            id: 'monaco',
+                            name: '摩納哥賽道',
+                            englishName: 'Circuit de Monaco',
+                            flagEmoji: '🇲🇨',
+                            country: '摩納哥 Monaco',
+                            type: '傳統街道賽道 (Street Circuit)',
+                            length: '3.337 km',
+                            topSpeed: '290 km/h',
+                            famousCorner: '髮夾彎 (Fairmont Hairpin) & 隧道彎',
+                            description: 'F1 歷史最悠久、最奢華且最難超車的皇冠明珠！在極度狹窄的街道間以近 300 公里時速穿梭，右側面臨護欄壓迫，左側面臨地中海豪宅遊艇。排位賽第一起跑位幾乎等於奪冠！',
+                            rookieFun: '看點：車手如何在厘米級的離牆距離過彎，以及週六排位賽極限搏鬥！',
+                            metrics: { overtaking: 1, speed: 3, danger: 10 }
+                        },
+                        {
+                            id: 'spa',
+                            name: '斯帕賽道',
+                            englishName: 'Circuit de Spa-Francorchamps',
+                            flagEmoji: '🇧🇪',
+                            country: '比利時 Belgium',
+                            type: '森林混合賽道 (Permanent Road Course)',
+                            length: '7.004 km',
+                            topSpeed: '350 km/h',
+                            famousCorner: 'Eau Rouge / Raidillon 組合彎',
+                            description: '位於阿登森林深處，全曆最長且最受車手喜愛的聖地！氣候極度變幻莫測（可能賽道一半下暴雨另一半出太陽），Eau Rouge 組合彎需全油門盲彎衝上高坡！',
+                            rookieFun: '看點：高速俯衝與考驗膽量的盲彎超車，微濕賽道戰術大洗牌。',
+                            metrics: { overtaking: 9, speed: 9, danger: 8 }
+                        },
+                        {
+                            id: 'monza',
+                            name: '蒙札賽道',
+                            englishName: 'Autodromo Nazionale Monza',
+                            flagEmoji: '🇮🇹',
+                            country: '義大利 Italy',
+                            type: '高速神殿 (Temple of Speed)',
+                            length: '5.793 km',
+                            topSpeed: '355+ km/h',
+                            famousCorner: 'Parabolica (Curva Alboreto)',
+                            description: '法拉利主場與速度之廟！80% 圈速全油門狂飆，極低下壓力設定。每逢比賽，義大利 Tifosi 紅色狂熱車迷將整個賽道染成紅海。',
+                            rookieFun: '看點：大直線尾端煞車點超車大戰與尾流（Slipstream）拉力。',
+                            metrics: { overtaking: 8, speed: 10, danger: 5 }
+                        },
+                        {
+                            id: 'suzuka',
+                            name: '鈴鹿賽道',
+                            englishName: 'Suzuka International Racing Course',
+                            flagEmoji: '🇯🇵',
+                            country: '日本 Japan',
+                            type: '8 字形技術型賽道',
+                            length: '5.807 km',
+                            topSpeed: '330 km/h',
+                            famousCorner: 'S 型連續彎 (S-Curves) & 130R 彎',
+                            description: '全曆唯一 8 字形立體交差賽道！考驗車輛空氣動力學平衡與車手節奏感的極致殿堂。第一區段 S 彎只要失誤一個彎，後續全部崩盤。',
+                            rookieFun: '看點：車手的行雲流水過彎節奏與日本車迷無敵熱情周邊。',
+                            metrics: { overtaking: 6, speed: 8, danger: 7 }
+                        },
+                        {
+                            id: 'singapore',
+                            name: '新加坡濱海灣',
+                            englishName: 'Marina Bay Street Circuit',
+                            flagEmoji: '🇸🇬',
+                            country: '新加坡 Singapore',
+                            type: '夜間街道賽道 (Night Street Circuit)',
+                            length: '4.940 km',
+                            topSpeed: '315 km/h',
+                            famousCorner: '18 號彎 & 摩天輪區',
+                            description: '歷史上第一座夜間 F1 賽道！高溫濕熱加上近 2 小時極限體能考驗，車手每場比賽流失 3-4 公斤體重。歷史上 100% 出動安全車率！',
+                            rookieFun: '看點：璀璨夜景霓虹與安全車出動引發的戰術地震。',
+                            metrics: { overtaking: 4, speed: 5, danger: 9 }
+                        },
+                        {
+                            id: 'vegas',
+                            name: '拉斯維加斯',
+                            englishName: 'Las Vegas Strip Circuit',
+                            flagEmoji: '🇺🇸',
+                            country: '美國 USA',
+                            type: '霓虹夜間大道賽',
+                            length: '6.201 km',
+                            topSpeed: '350 km/h',
+                            famousCorner: '賭城大道 1.9km 超長直線',
+                            description: '穿越奢華賭城大道 (The Strip)！1.9 公里超長直線讓賽車飆破 350 km/h。低溫夜間賽事對輪胎加熱與工作溫度帶來前所未有的考驗。',
+                            rookieFun: '看點：地表最奢華燈光秀與大直線尾端極速重煞超車！',
+                            metrics: { overtaking: 9, speed: 9, danger: 6 }
+                        }
+                    ],
+
+                    showTeamTab: 'current',
+
+                    // Main Teams Array for 11 Teams Showcase
+                    mainTeams: [
+                        {
+                            name: 'Red Bull Racing',
+                            emoji: '🐂',
+                            engine: 'Red Bull Ford',
+                            titleCount: 6,
+                            color: '#3671C6',
+                            drivers: 'Max Verstappen / Liam Lawson',
+                            details: '聯手 Ford 打造新一代 Power Unit，搭配 Verstappen 的極致壓制力，是現代 F1 霸主。',
+                            highlight: '全球最頂級的 1.8 秒 Pit Stop 換胎默契與空力設計。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Scuderia Ferrari',
+                            emoji: '🏎️',
+                            engine: 'Ferrari',
+                            titleCount: 16,
+                            color: '#E8002D',
+                            drivers: 'Charles Leclerc / Lewis Hamilton',
+                            details: 'F1 歷史的代名詞！Charles Leclerc 與 Lewis Hamilton 夢幻組隊，義大利激情擔當。',
+                            highlight: '勝負皆是戲劇！全網熱度最高與 Tifosi 紅色海洋信仰。',
+                            flipped: false
+                        },
+                        {
+                            name: 'McLaren F1 Team',
+                            emoji: '🧡',
+                            engine: 'Mercedes',
+                            titleCount: 8,
+                            color: '#FF8000',
+                            drivers: 'Lando Norris / Oscar Piastri',
+                            details: '木瓜橙青年近衛軍！擁有一流空力研發能力與全場天賦極高的雙星車手陣容。',
+                            highlight: '兩位年輕車手的頂尖競爭與歡樂隊伍氣氛。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Mercedes-AMG',
+                            emoji: '🩶',
+                            engine: 'Mercedes',
+                            titleCount: 8,
+                            color: '#27F4D2',
+                            drivers: 'George Russell / Kimi Antonelli',
+                            details: '銀箭帝國！曾創下 8 連霸紀錄，由 Russell 攜手年輕天才 Antonelli 迎接新時代。',
+                            highlight: '極致系統化數據分析與強大引擎研發技術。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Aston Martin Aramco',
+                            emoji: '💚',
+                            engine: 'Honda Factory',
+                            titleCount: 0,
+                            color: '#229971',
+                            drivers: 'Fernando Alonso / Lance Stroll',
+                            details: '獨家攜手 Honda 廠隊引擎，擁有頂級風洞技術與老將 Alonso 神級坐鎮。',
+                            highlight: '老神仙 Alonso 經驗爆棚的賽道防守與戰術閱讀。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Williams Racing',
+                            emoji: '💙',
+                            engine: 'Mercedes',
+                            titleCount: 9,
+                            color: '#64C4FF',
+                            drivers: 'Alexander Albon / Carlos Sainz',
+                            details: '擁有 9 次車隊冠軍的傳統豪門，Sainz 與 Albon 組成全場極具實力的實力派車手陣容。',
+                            highlight: '老牌豪門步步重返前排的感人逆襲故事。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Cadillac F1 Team',
+                            emoji: '🦅',
+                            engine: 'GM / Ferrari',
+                            titleCount: 0,
+                            color: '#C8A162',
+                            drivers: '美式新星 & 經驗老將',
+                            details: '正式加盟的第 11 支全新車隊！通用汽車 (General Motors) 攜手 Cadillac 衝擊賽車殿堂。',
+                            highlight: '全新第 11 隊打破現有格局的美式挑戰者。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Audi F1 Team',
+                            emoji: '🔴',
+                            engine: 'Audi Power Unit',
+                            titleCount: 0,
+                            color: '#F32013',
+                            drivers: 'Nico Hülkenberg / Gabriel Bortoleto',
+                            details: '德國 Audi 四環巨頭全面進駐！全新開發 Audi 動力單元，硬核工程師文化。',
+                            highlight: '德系頂級汽車巨頭親自下場造車的長期野心。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Alpine F1 Team',
+                            emoji: '🇫🇷',
+                            engine: 'Mercedes / Renault',
+                            titleCount: 2,
+                            color: '#0093CC',
+                            drivers: 'Pierre Gasly / Jack Doohan',
+                            details: '代表法國賽車榮耀，氣氛鮮明且具備隨時在混亂戰局中登上領獎台的爆發力。',
+                            highlight: '混亂戰術中出奇制勝的法式賽車浪漫。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Haas F1 Team',
+                            emoji: '🇺🇸',
+                            engine: 'Ferrari',
+                            titleCount: 0,
+                            color: '#B6BABD',
+                            drivers: 'Esteban Ocon / Oliver Bearman',
+                            details: '接地氣的美式團隊！與 Ferrari 深度合作，Ocon 與 Bearman 帶來充沛活力。',
+                            highlight: '精簡團隊發揮最大效率的黑馬本色。',
+                            flipped: false
+                        },
+                        {
+                            name: 'Racing Bulls (VCARB)',
+                            emoji: '⚡',
+                            engine: 'Red Bull Ford',
+                            titleCount: 0,
+                            color: '#6692FF',
+                            drivers: 'Yuki Tsunoda / Isack Hadjar',
+                            details: 'Red Bull 旗下青年軍！極具潮流風格，角田裕毅領軍展現強勁攻擊力。',
+                            highlight: '充滿潮流感與關注下一代超級新星。',
+                            flipped: false
+                        }
+                    ],
+                    legends: [
+                        {
+                            name: 'Michael Schumacher',
+                            nickname: '車神',
+                            titles: 7,
+                            era: '1991 - 2012',
+                            summary: '將 F1 車手體能、戰術與專業化推向極致，與法拉利創下震撼五連霸。',
+                            iconicMoment: '1996 年西班牙雨戰神級大逆轉。'
+                        },
+                        {
+                            name: 'Lewis Hamilton',
+                            nickname: '爵士',
+                            titles: 7,
+                            era: '2007 - 現役',
+                            summary: '100+ 勝與 100+ 桿位紀錄保持者！擁有極強雨戰天賦與輪胎管理能力。',
+                            iconicMoment: '2008 年巴西站最後彎道戲劇性奪得首冠。'
+                        },
+                        {
+                            name: 'Ayrton Senna',
+                            nickname: '車神洗拿',
+                            titles: 3,
+                            era: '1984 - 1994',
+                            summary: '巴西民族英雄，天賦最純粹的賽車哲人。極致的雨戰之神與排位賽單圈大師。',
+                            iconicMoment: '1988 年摩納哥排位賽領先隊友 1.4 秒。'
+                        },
+                        {
+                            name: 'Niki Lauda',
+                            nickname: '鋼鐵意志',
+                            titles: 3,
+                            era: '1971 - 1985',
+                            summary: '冷靜理性的大腦，火海重生的傳奇代表，後為賓士八連霸幕後推手。',
+                            iconicMoment: '1976 年車禍後僅 6 週重返賽場角逐冠軍。'
+                        },
+                        {
+                            name: 'Alain Prost',
+                            nickname: '教授',
+                            titles: 4,
+                            era: '1980 - 1993',
+                            summary: '以精準計算與溫和保護車體風格著稱，Senna 最偉大的宿敵。',
+                            iconicMoment: '1989/1990 年日本鈴鹿站兩度撞車爭冠。'
+                        },
+                        {
+                            name: 'Juan Manuel Fangio',
+                            nickname: '創世傳奇',
+                            titles: 5,
+                            era: '1950s',
+                            summary: 'F1 50年代創世神，代表 4 支不同車隊奪冠，紀錄保持半個世紀。',
+                            iconicMoment: '1957 年紐柏林賽道連續打破圈速紀錄逆轉。'
+                        }
+                    ],
+
+                    // DTS Episodes
+                    dtsEpisodes: [
+                        {
+                            season: 'S1 • E01',
+                            title: 'All to Play For',
+                            whyWatch: '新手最佳起步集！快速了解 F1 賽事架構、速度感與車手心理壓力。'
+                        },
+                        {
+                            season: 'S1 • E04',
+                            title: 'Art of War',
+                            whyWatch: '揭露 Red Bull 與 Renault 幕後戰術角力與高層之間的嘴砲對決。'
+                        },
+                        {
+                            season: 'S3 • E09',
+                            title: 'Man on Fire',
+                            whyWatch: '記錄 Grosjean 於巴林站穿越 28g 撞擊與火海逃生 28 秒的故事。'
+                        },
+                        {
+                            season: 'S4 • E10',
+                            title: 'Reckoning',
+                            whyWatch: '2021 賽季 Hamilton 與 Verstappen 世紀絕殺大決戰視角整理。'
+                        }
+                    ]
+                }
+            },
+            created() {
+                // Initialize active default card selections safely
+                if (this.flags && this.flags.length) this.selectedFlag = this.flags[0];
+                if (this.dramas && this.dramas.length) this.selectedDrama = this.dramas[0];
+                if (this.circuits && this.circuits.length) this.selectedCircuit = this.circuits[0];
+            },
+            computed: {
+                filteredJargons() {
+                    if (!this.jargons) return [];
+                    return this.jargons.filter(j => {
+                        const matchCat = this.jargonCategory === 'all' || j.category === this.jargonCategory;
+                        const q = this.jargonSearch ? this.jargonSearch.toLowerCase().trim() : '';
+                        const matchQuery = !q || j.term.toLowerCase().includes(q) || j.cnName.includes(q) || j.explanation.includes(q);
+                        return matchCat && matchQuery;
+                    });
+                },
+                matchedTeam() {
+                    let highestKey = 'ferrari';
+                    let maxVal = -1;
+                    for (const key in this.quizScores) {
+                        if (this.quizScores[key] > maxVal) {
+                            maxVal = this.quizScores[key];
+                            highestKey = key;
+                        }
+                    }
+                    return this.teamsData[highestKey] || this.teamsData['ferrari'];
+                }
+            },
+            methods: {
+                selectOption(teamKey) {
+                    this.quizScores[teamKey] = (this.quizScores[teamKey] || 0) + 1;
+                    if (this.currentQuestion < this.questions.length - 1) {
+                        this.currentQuestion++;
+                    } else {
+                        this.quizFinished = true;
+                    }
+                },
+                resetQuiz() {
+                    this.quizFinished = false;
+                    this.currentQuestion = 0;
+                    this.quizScores = { ferrari: 0, redbull: 0, mclaren: 0, mercedes: 0, aston: 0, alpine: 0, williams: 0, vcarb: 0, audi: 0, haas: 0, cadillac: 0 };
+                }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
